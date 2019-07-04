@@ -3,30 +3,24 @@ const ScrapeFaqs = require('./ScrapeFaq.js');
 const fs = require('fs');
 
 const targets = [
-  'https://www.google.com/about/datacenters/faq/',
-  'https://www.google.com/policies/faq/',
-  'https://admission.virginia.edu/faq',
-  'https://appleid.apple.com/faq/#!&page=faq',
-  'https://www.ugrad.vcu.edu/why/faqs/admissions.html',
-  'https://www.ugrad.vcu.edu/why/faqs/activities.html',
-  'https://www.ugrad.vcu.edu/why/faqs/dining.html',
-  'https://www.ugrad.vcu.edu/why/faqs/enrollment.html',
-  'https://www.ugrad.vcu.edu/why/faqs/financing.html',
-  'https://www.ugrad.vcu.edu/why/faqs/health.html',
-  'https://www.ugrad.vcu.edu/why/faqs/housing.html',
-  'https://www.ugrad.vcu.edu/why/faqs/libraries.html',
-  'https://www.ugrad.vcu.edu/why/faqs/transfers.html',
-  'https://www.ugrad.vcu.edu/why/faqs/transportation.html'
+    'https://www.delta.com/content/www/en_US/support/faqs/during-your-trip/baggage-faqs.html',
+    'https://www.aeroflot.ru/ru-en/afl_bonus/questions_answers'
 ];
 const output = 'FAQs.json';
 
 let faqs = [];
-
 const grabFAQs = function(question) {
-  Puppeteer.launch().then((browser) => {
+  Puppeteer.launch({ignoreHTTPSErrors: true}).then((browser) => {
     Promise.all(targets.map(i => new Promise((resolve, reject) => {
       browser.newPage().then((page) => {
+        page.setUserAgent("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)");
         page.goto(i).then(() => {
+          page.evaluate(()=> {
+              Array.from(document.querySelectorAll('*')).filter(e => !['script', 'style',
+                    'link', 'meta', 'embed', 'object'].includes(e.tagName.toLowerCase()) &&
+                  getComputedStyle(e).display == 'none').forEach(e => e.style.display =
+                  'block');
+          })
           page.evaluate(ScrapeFaqs).then(details => {
             resolve(details);
           });
