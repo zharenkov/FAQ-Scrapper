@@ -3,8 +3,10 @@ const ScrapeFaqs = require('./ScrapeFaq.js');
 const fs = require('fs');
 
 const targets = [
+    'https://www.bankofamerica.com/deposits/account-information-and-access-faqs/',
+    'https://www.aeroflot.ru/ru-en/afl_bonus/questions_answers',
     'https://www.delta.com/content/www/en_US/support/faqs/during-your-trip/baggage-faqs.html',
-    'https://www.aeroflot.ru/ru-en/afl_bonus/questions_answers'
+    'https://aws.amazon.com/sqs/faqs/'
 ];
 const output = 'FAQs.json';
 
@@ -15,12 +17,17 @@ const grabFAQs = function(question) {
       browser.newPage().then((page) => {
         page.setUserAgent("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)");
         page.goto(i).then(() => {
-          page.evaluate(()=> {
-              Array.from(document.querySelectorAll('*')).filter(e => !['script', 'style',
-                    'link', 'meta', 'embed', 'object'].includes(e.tagName.toLowerCase()) &&
-                  getComputedStyle(e).display == 'none').forEach(e => e.style.display =
-                  'block');
-          })
+          // page.evaluate(()=>{
+          //   let elements = document.getElementsByClassName('accordion');
+          //   for (let element of elements)
+          //     element.click();
+          // })
+          // page.evaluate(()=> {
+          //     Array.from(document.querySelectorAll('*')).filter(e => !['script', 'style',
+          //           'link', 'meta', 'embed', 'object'].includes(e.tagName.toLowerCase()) &&
+          //         (getComputedStyle(e).display == 'none')).forEach(e => {e.style.display =
+          //         'block'; e.style.maxHeight='none'});
+          // })
           page.evaluate(ScrapeFaqs).then(details => {
             resolve(details);
           });

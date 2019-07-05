@@ -22,42 +22,61 @@ module.exports = function ScrapeFaq() {
         ].includes(i.tagName.toLowerCase())
         && this.containsTextNode(i));
     };
-    getQuestions(node) {
-      return this.getLeafTextElements().filter(i => i.innerText.includes('?'));
+    getQuestions() {
+      return this.getLeafTextElements().filter(i => i.innerText.trim().endsWith('?'));
     };
-    getAnswersToQuestion(questions) {
-      let questionAnswers = [];
-      questions.forEach(e => {
-        let minY = e.getBoundingClientRect().y;
-        let maxY = Infinity;
-        let minX = e.getBoundingClientRect().x - 1;
-        let maxX = minX + 50;
-        for (let elem of questions) {
-          if (elem.getBoundingClientRect().y > minY && elem.getBoundingClientRect().y < maxY) {
-            maxY = elem.getBoundingClientRect().y;
+
+    getTextNodesBetween  (rootNode, startNode, endNode) {
+      var pastStartNode = false, reachedEndNode = false, textNodes = [];
+
+      function getTextNodes(node) {
+        if (node) {
+          if (node == startNode) {
+            pastStartNode = true;
+          } else if (node == endNode) {
+            reachedEndNode = true;
+          } else if (node.nodeType == 3) {
+            if (pastStartNode && !reachedEndNode && !/^\s*$/.test(node.nodeValue)) {
+              textNodes.push(node);
+            }
+          } else {
+            for (var i = 0, len = node.childNodes.length; !reachedEndNode && i < len; ++i) {
+              getTextNodes(node.childNodes[i]);
+            }
           }
         }
-        let elements = this.getLeafTextElements()
-          .filter(i => i.getBoundingClientRect().x >= minX
-            && i.getBoundingClientRect().x <= maxX
-            && i.getBoundingClientRect().y > minY
-            && i.getBoundingClientRect().y < maxY
-            && questions.filter(questionElement => questionElement.contains(i)).length == 0);
-        if (elements.length && (/(\w+\s+|^)to\s+\w+(\s+\w+|\s*$)$/g).test(elements[elements.length - 1].textContent.trim())) {
-          elements.pop();
-        }
-        if (elements.map(i => i.innerText.trim()).join('').length > 1) {
-          questionAnswers.push({
-            question: e.innerText.toLowerCase().replace(/[^\w\']/g, ' ').trim(),
-            answer: elements.map(i => i.innerText.trim()).join('\n'),
-            source: location.host
-          });
-        }
-      });
-      return questionAnswers;
-    };
+      }
+
+      getTextNodes(rootNode);
+      return textNodes;
+    }
+
+    getAnswersToQuestion(questions) {
+      function removeQuestionFromAnswer(question,answer) {
+        let flag = answer.toLowerCase().includes(question.toLowerCase());
+        return flag ? answer.substr(question.length) : answer;
+      }
+      let questionAnswers = [];
+      for (var i=0; i< questions.length-1; i++){
+        let startNode = questions[i];
+        let endNode = questions[i+1];
+        let textNodes = this.getTextNodesBetween(this.target, startNode, endNode);
+        let answer = textNodes.map(node => node.data.trim()).filter(text  => !text.startsWith('$')).join(' ');
+          if (answer != '') {
+            let question = startNode.innerText.replace(/(^(question)|^(q))(\s*\:*)/,'').trim();
+            answer = removeQuestionFromAnswer(question, answer)
+            questionAnswers.push({
+              question: question,//node1.innerText.toLowerCase().replace(/[^\w\']/g, ' ').trim(),
+              answer: answer,
+              source: location.host
+            })
+          }
+      }
+      return questionAnswers
+    }
+
     getFaqs() {
-      return this.getAnswersToQuestion(this.getQuestions(this.target));
+      return this.getAnswersToQuestion(this.getQuestions());
     }
   }
   return (new FaqScapper()).getFaqs();
