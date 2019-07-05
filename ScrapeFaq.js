@@ -63,7 +63,7 @@ module.exports = function ScrapeFaq() {
         let textNodes = this.getTextNodesBetween(this.target, startNode, endNode);
         let answer = textNodes.map(node => node.data.trim()).filter(text  => !text.startsWith('$')).join(' ');
           if (answer != '') {
-            let question = startNode.innerText.replace(/(^(question)|^(q))(\s*\:*)/,'').trim();
+              let question = startNode.innerText.replace(/(^((Q|q))(uestion){0,1})(\s*\:*)/,'').trim();
             answer = removeQuestionFromAnswer(question, answer)
             questionAnswers.push({
               question: question,//node1.innerText.toLowerCase().replace(/[^\w\']/g, ' ').trim(),
